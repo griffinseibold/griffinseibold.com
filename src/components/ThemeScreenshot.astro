@@ -1,0 +1,95 @@
+---
+import { Image, type ImageMetadata } from 'astro:assets';
+
+type Props = {
+  light: ImageMetadata;
+  dark: ImageMetadata;
+  alt: string;
+  caption?: string;
+  compact?: boolean;
+  /** A phone-sized capture, shown narrow and centred. */
+  phone?: boolean;
+  eager?: boolean;
+};
+
+const { light, dark, alt, caption, compact = false, phone = false, eager = false } = Astro.props;
+const widths = phone ? [390, 780] : [640, 960, 1265];
+const sizes = phone ? '18rem' : '(max-width: 56rem) calc(100vw - 2rem), 46rem';
+---
+
+<figure class:list={['theme-screenshot', { compact, phone }]}>
+  <div class="frame">
+    <Image
+      class="shot shot--light"
+      src={light}
+      alt={alt}
+      widths={widths}
+      sizes={sizes}
+      loading={eager ? 'eager' : 'lazy'}
+    />
+    <Image
+      class="shot shot--dark"
+      src={dark}
+      alt={alt}
+      widths={widths}
+      sizes={sizes}
+      loading={eager ? 'eager' : 'lazy'}
+    />
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .theme-screenshot {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0;
+  }
+
+  .frame {
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    border-radius: calc(var(--radius) + 2px);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  .shot {
+    width: 100%;
+    height: auto;
+  }
+
+  .shot--dark {
+    display: none;
+  }
+
+  :global(:root[data-theme='dark']) .shot--light {
+    display: none;
+  }
+
+  :global(:root[data-theme='dark']) .shot--dark {
+    display: block;
+  }
+
+  figcaption {
+    color: var(--faint);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  .compact .frame {
+    border-color: var(--border);
+    border-radius: var(--radius);
+    box-shadow: none;
+  }
+
+  .phone {
+    justify-items: center;
+  }
+
+  .phone .frame {
+    width: min(100%, 18rem);
+    border-radius: 1.5rem;
+  }
+</style>

@@ -1,0 +1,384 @@
+---
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import HomelabDiagram from '../components/HomelabDiagram.astro';
+import ThemeScreenshot from '../components/ThemeScreenshot.astro';
+import flipFinderChatLight from '../assets/flip-finder-chat-light.jpg';
+import flipFinderChatDark from '../assets/flip-finder-chat-dark.jpg';
+import { site, otherProjects } from '../site';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const showcased = otherProjects.filter((p) => p.image);
+const smaller = otherProjects.filter((p) => !p.image);
+---
+
+<Base>
+  <section class="intro">
+    <div class="container">
+      <h1>{site.name}</h1>
+      <p class="lede">
+        I'm a software engineer. Here are some projects I've built, including infrastructure, platforms, and applications.
+      </p>
+      <p class="aside">
+        If you're looking for my work history, it's on <a class="link" href={site.links.linkedin}
+          >LinkedIn</a
+        >, and my code is on <a class="link" href={site.links.github}>GitHub</a>.
+      </p>
+    </div>
+  </section>
+
+  <section class="projects" id="projects" aria-labelledby="projects-title">
+    <div class="container">
+      <h2 class="label" id="projects-title">Projects</h2>
+
+      {
+        projects.map((project) => (
+          <article class="feature">
+            <div class="feature-copy">
+              <h3>
+                <a href={`/projects/${project.id}/`}>{project.data.title}</a>
+              </h3>
+              <p class="summary">{project.data.summary}</p>
+              <ul class="tag-list">
+                {project.data.stack.slice(0, 7).map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+              <p class="feature-links">
+                <a class="primary-link" href={`/projects/${project.id}/`}>
+                  How it works <Icon name="arrow-right" />
+                </a>
+                {project.data.repo && (
+                  <a class="secondary-link" href={project.data.repo}>
+                    Source <Icon name="arrow-up-right" />
+                  </a>
+                )}
+              </p>
+            </div>
+            {project.id === 'homelab' && (
+              <div class="feature-visual">
+                <HomelabDiagram />
+              </div>
+            )}
+            {project.id === 'flip-finder' && (
+              <div class="feature-visual">
+                {/* A second way into the write-up; the heading and How it works stay the links in the tab order. */}
+                <a class="visual-link" href={`/projects/${project.id}/`} tabindex="-1" aria-hidden="true">
+                  <ThemeScreenshot
+                    light={flipFinderChatLight}
+                    dark={flipFinderChatDark}
+                    alt="Flip Finder answering what should I flip right now with five recommendations grounded in live Grand Exchange prices."
+                    compact
+                    eager
+                  />
+                </a>
+              </div>
+            )}
+          </article>
+        ))
+      }
+
+      {
+        showcased.map((p) => (
+          <article class="feature feature--reverse">
+            <div class="feature-copy">
+              <h3>
+                <a href={p.href}>{p.name}</a>
+              </h3>
+              <p class="summary">{p.description}</p>
+              <ul class="tag-list">
+                {p.stack.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+              <p class="feature-links">
+                <a class="primary-link" href={p.href}>
+                  Source <Icon name="arrow-up-right" />
+                </a>
+              </p>
+            </div>
+            {p.image && (
+              <div class="feature-visual">
+                <Image
+                  class="screenshot"
+                  src={p.image.src}
+                  alt={p.image.alt}
+                  widths={[560, 840, 1120]}
+                  sizes="(max-width: 56rem) 100vw, 560px"
+                />
+              </div>
+            )}
+          </article>
+        ))
+      }
+
+      <ul class="cards">
+        {
+          smaller.map((p) => (
+            <li class="card">
+              <h3>
+                <a href={p.href} class="stretched">
+                  {p.name}
+                  <Icon name="arrow-up-right" />
+                </a>
+              </h3>
+              <p class="summary">{p.description}</p>
+              <ul class="tag-list">
+                {p.stack.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Intro */
+
+  .intro {
+    position: relative;
+    padding-block: clamp(3.5rem, 10vw, 7rem) clamp(3rem, 7vw, 5rem);
+    isolation: isolate;
+  }
+
+  /* Dotted notebook paper, fading out toward the content below. */
+  .intro::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: linear-gradient(to bottom, #000 40%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent);
+  }
+
+  h1 {
+    font-size: clamp(2.25rem, 4vw + 1rem, 3.5rem);
+    letter-spacing: -0.04em;
+  }
+
+  .lede {
+    max-width: 36rem;
+    margin-top: 1.25rem;
+    font-size: clamp(1.125rem, 0.6vw + 1rem, 1.3125rem);
+    line-height: 1.55;
+  }
+
+  .aside {
+    max-width: 36rem;
+    margin-top: 1rem;
+    color: var(--muted);
+  }
+
+  .aside .link {
+    color: var(--text);
+    text-decoration-color: var(--accent);
+  }
+
+  /* Projects */
+
+  .projects {
+    padding-block: 0 clamp(4rem, 9vw, 6.5rem);
+  }
+
+  .label {
+    margin-bottom: 1.25rem;
+    color: var(--accent-text);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  .feature {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 4px);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  .feature-copy {
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 0.875rem;
+  }
+
+  .feature h3 {
+    font-size: clamp(1.75rem, 2vw + 1rem, 2.25rem);
+    letter-spacing: -0.035em;
+  }
+
+  .feature h3 a {
+    text-decoration: none;
+  }
+
+  .feature h3 a:hover {
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.15em;
+  }
+
+  .summary {
+    color: var(--muted);
+  }
+
+  .feature-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .primary-link,
+  .secondary-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .primary-link {
+    color: var(--accent-text);
+  }
+
+  .secondary-link {
+    color: var(--muted);
+  }
+
+  .secondary-link:hover {
+    color: var(--text);
+  }
+
+  .primary-link :global(svg),
+  .secondary-link :global(svg) {
+    width: 1rem;
+    height: 1rem;
+    transition: transform 150ms ease;
+  }
+
+  .primary-link:hover :global(svg) {
+    transform: translateX(3px);
+  }
+
+  .feature + .feature {
+    margin-top: 1rem;
+  }
+
+  .feature--reverse {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+
+  .feature--reverse .feature-visual {
+    order: -1;
+  }
+
+  .feature-visual {
+    align-self: center;
+    font-size: 0.875rem;
+  }
+
+  .visual-link {
+    display: block;
+  }
+
+  .visual-link :global(.frame) {
+    transition: border-color 150ms ease;
+  }
+
+  .visual-link:hover :global(.frame) {
+    border-color: var(--border-strong);
+  }
+
+  .screenshot {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 1rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .card {
+    position: relative;
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 0.75rem;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 4px);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    transition: border-color 150ms ease;
+  }
+
+  .card:hover {
+    border-color: var(--border-strong);
+  }
+
+  .card h3 {
+    font-size: 1.375rem;
+    letter-spacing: -0.03em;
+  }
+
+  .card h3 a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    text-decoration: none;
+  }
+
+  .card h3 :global(svg) {
+    width: 1rem;
+    height: 1rem;
+    color: var(--faint);
+  }
+
+  .card:hover h3 a {
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+  }
+
+  /* The whole card is clickable while keeping one link in the tab order. */
+  .stretched::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  @media (max-width: 56rem) {
+    .feature,
+    .feature--reverse {
+      grid-template-columns: 1fr;
+    }
+
+    .feature--reverse .feature-visual {
+      order: 0;
+    }
+  }
+</style>

@@ -1,0 +1,123 @@
+---
+title: Homelab
+summary: A Kubernetes platform where I experiment and deploy the projects I'm working on. It's managed through git, runs a local LLM on the GPU, and includes monitoring and backups.
+description: How my homelab works, a Kubernetes platform on one desktop for experimenting and deploying projects, managed through git.
+stack: [Ansible, Docker, Kind, Flux, Argo CD, Envoy Gateway, cert-manager, Prometheus, Grafana, Loki, Alloy, llama.cpp]
+repo: https://github.com/griffinseibold/Homelab
+order: 2
+---
+
+import HomelabExplorer from '../../components/HomelabExplorer.astro';
+
+## Why I built it
+
+I wanted a place to experiment, and to deploy the projects I'm working on, in a
+cloud-native environment. Homelab is that environment. It's a Kubernetes
+platform with GitOps deployments, an ingress gateway,
+monitoring and logging, and a local LLM running on the GPU.
+
+Everything is defined in one git repository, and a few scripts take a fresh
+Ubuntu install to a running platform. The desktop has a Ryzen 9 3900X, 48 GB
+of RAM, and a Radeon RX 6900 XT with 16 GB of VRAM.
+
+## Architecture
+
+Click any part of the diagram to see what it does, or pick a walkthrough to
+follow something through the system step by step.
+
+<HomelabExplorer />
+
+## Deploying an application
+
+Each application lives in its own repository with a Helm chart.
+[hello-crud](https://github.com/griffinseibold/hello-crud), a small Flask API,
+is the reference example, and
+[Flip Finder](https://github.com/griffinseibold/Flip-Finder) runs the same
+way. Deploying one takes three steps:
+
+1. Register the app in Argo CD by pointing it at the repository and chart.
+2. Argo CD installs the app into its own namespace and keeps it in sync with
+   the repository from then on.
+3. The chart includes a route, and Envoy starts sending the app's hostname,
+   like `hello-crud.localhost`, to it.
+
+Once the app is running, it gets the rest of the platform too:
+
+- Its logs show up in Grafana automatically.
+- If it stores data on a persistent volume, the backup tool covers it.
+- It can publish metrics to Prometheus by including a ServiceMonitor in its
+  chart.
+
+## Monitoring and logs
+
+- **Metrics.** Prometheus keeps seven days of data and discovers scrape targets
+  in every namespace.
+- **Logs.** Grafana Alloy runs on every node and ships every pod's logs to Loki,
+  labeled by namespace, pod, and container.
+- **Dashboards.** Grafana shows both, with Kubernetes dashboards and a dashboard
+  for the model server that tracks active and queued requests and token
+  throughput.
+- **Alerts.** Alerts fire if the model server goes down or its request queue
+  backs up.
+
+## Local LLM on the GPU
+
+The model server is llama.cpp's Vulkan build running Qwen3-8B, quantized to
+4 bits, entirely on the GPU with an 8K-token context. It serves an
+OpenAI-compatible API, and Open WebUI provides a chat interface on top of it.
+
+- **GPU access.** Kind has no GPU device plugin, so the model server's pod
+  mounts the GPU device directly from the host.
+- **One GPU, one server.** The server runs as a single replica and is replaced
+  rather than rolled during upgrades, so two copies never compete for VRAM.
+- **Placement.** It only runs on workers labeled as able to host it. It has a
+  12 GiB memory limit and five minutes to load the model at startup.
+- **Model files.** Models stay on the host disk and are mounted read-only, so
+  they survive a cluster rebuild. The download script checks a pinned SHA-256
+  checksum and resumes interrupted downloads.
+
+## Backups
+
+A small Python tool, written with only the standard library, handles backup
+and restore:
+
+- **`create`** pauses the cluster's node containers while it copies each
+  volume, then resumes them, even after an error or an interrupt. It writes
+  SHA-256 checksums and exports the application registrations from Argo CD.
+- **`verify`** re-checks every checksum and rejects archive paths that would
+  escape their volume.
+- **`restore-volume`** restores only into an empty, unused volume at least as
+  large as the original, and keeps file ownership intact.
+
+Tests cover the backup and bootstrap logic, including a Docker-based
+backup-and-restore round trip.
+
+## Access
+
+Envoy routes each request by hostname:
+
+- **On the desktop**, `.localhost` names through `127.0.0.1:8080`:
+  `chat.localhost`, `grafana.localhost`, `argocd.localhost`, `llm.localhost`,
+  and one hostname per application.
+- **On my home network**, HTTPS at `.lab.internal` names such as
+  `chat.lab.internal` and `flipfinder.lab.internal`. Each app opts in; Argo CD
+  and the model API stay on the desktop. The router's DNS points each name at
+  the desktop, and a wildcard certificate from my own certificate authority,
+  issued through cert-manager and valid only for `lab.internal` names, secures
+  them.
+
+Nothing is reachable from outside the home network. The gateway listens only on
+the desktop's private address, behind the router's firewall, and `.internal`
+names never resolve on the public internet.
+
+## Design choices
+
+- **No credentials to rebuild.** Flux reads the Homelab repository over
+  anonymous HTTPS, so a fresh cluster can sync without a GitHub token.
+- **Models on the host.** Model files survive cluster rebuilds and never need
+  to be downloaded again.
+- **A bootstrap that never deletes a cluster.** It reuses a compatible
+  cluster. Tearing one down is always a separate, deliberate step.
+- **Explicit ordering.** Components start in dependency order: the gateway
+  first, then monitoring and Argo CD, then logging, the model server, and chat.
+  Helm releases retry automatically if something isn't ready yet.

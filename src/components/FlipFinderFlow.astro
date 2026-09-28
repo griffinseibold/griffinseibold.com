@@ -1,0 +1,114 @@
+<figure class="flow" aria-labelledby="flow-title">
+  <figcaption id="flow-title">The same ranking engine powers the table and the chat</figcaption>
+
+  <div class="sources" aria-label="Data sources">
+    <div class="node">
+      <p class="kind">Market data</p>
+      <strong>RuneScape Wiki API</strong>
+      <span>Prices, volume, items and buy limits</span>
+    </div>
+    <div class="node">
+      <p class="kind">Account context</p>
+      <strong>RuneLite plugin</strong>
+      <span>Coins, membership, offers and used limits</span>
+    </div>
+  </div>
+
+  <span class="arrow" aria-hidden="true">↓</span>
+
+  <div class="node engine">
+    <p class="kind">Spring Boot + SQLite</p>
+    <strong>One explainable ranking engine</strong>
+    <span>Applies tax, budget, volume, recency and four-hour limits</span>
+  </div>
+
+  <span class="arrow" aria-hidden="true">↓</span>
+
+  <div class="outputs" aria-label="User experiences">
+    <div class="node">
+      <p class="kind">Direct exploration</p>
+      <strong>Ranked flip table</strong>
+      <span>Filter, sort and inspect every candidate</span>
+    </div>
+    <div class="node">
+      <p class="kind">Guided exploration</p>
+      <strong>Local AI chat</strong>
+      <span>Calls the ranker, then links back to the rows it used</span>
+    </div>
+  </div>
+</figure>
+
+<style>
+  .flow {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+  }
+
+  figcaption {
+    margin-bottom: 0.25rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .sources,
+  .outputs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .node {
+    display: grid;
+    align-content: start;
+    gap: 0.25rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    line-height: 1.4;
+  }
+
+  .node strong {
+    font-size: 0.9375rem;
+  }
+
+  .node span {
+    color: var(--muted);
+    font-size: 0.8125rem;
+  }
+
+  .kind {
+    color: var(--accent-text);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .engine {
+    border-color: var(--border-strong);
+    box-shadow: inset 3px 0 0 var(--accent);
+    text-align: center;
+  }
+
+  .arrow {
+    color: var(--faint);
+    font-family: var(--font-mono);
+    line-height: 1;
+    text-align: center;
+  }
+
+  @media (max-width: 34rem) {
+    .sources,
+    .outputs {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

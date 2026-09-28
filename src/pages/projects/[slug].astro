@@ -1,0 +1,351 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({ params: { slug: project.id }, props: { project } }));
+}
+
+const { project } = Astro.props;
+const { Content, headings } = await render(project);
+const toc = headings.filter((h) => h.depth === 2);
+const { data } = project;
+---
+
+<Base title={data.title} description={data.description}>
+  <article>
+    <header class="hero">
+      <div class="container">
+        <a class="back" href="/#projects">
+          <Icon name="arrow-right" class="back-icon" />
+          All projects
+        </a>
+        <h1>{data.title}</h1>
+        <p class="summary">{data.summary}</p>
+
+        {
+          data.repo && (
+            <a class="repo" href={data.repo}>
+              <Icon name="github" />
+              {new URL(data.repo).pathname.slice(1)}
+            </a>
+          )
+        }
+      </div>
+    </header>
+
+    <div class="container layout">
+      <aside class="sidebar">
+        <nav aria-label="On this page">
+          <p class="sidebar-title">On this page</p>
+          <ol class="toc">
+            {
+              toc.map((h) => (
+                <li>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))
+            }
+          </ol>
+        </nav>
+        <div class="stack">
+          <p class="sidebar-title">Built with</p>
+          <ul class="tag-list">
+            {data.stack.map((item) => <li>{item}</li>)}
+          </ul>
+        </div>
+      </aside>
+
+      <div class="prose">
+        <Content />
+
+        {
+          data.repo && (
+            <p class="source-cta">
+              <a class="button" href={data.repo}>
+                <Icon name="github" />
+                Source on GitHub
+                <Icon name="arrow-up-right" />
+              </a>
+            </p>
+          )
+        }
+      </div>
+    </div>
+  </article>
+</Base>
+
+<script>
+  // Marks the section the reader is currently in. A section counts as current
+  // once its heading scrolls up past the sticky header. A clicked link stays
+  // current until the reader scrolls on their own, so short sections near the
+  // bottom of the page can still be selected.
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc a')];
+  const headings = links.map((link) =>
+    document.getElementById(decodeURIComponent(link.hash.slice(1)))
+  );
+
+  let pinned: number | null = null;
+  let frame = 0;
+
+  const mark = (current: number) => {
+    links.forEach((link, i) => {
+      if (i === current) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    });
+  };
+
+  const update = () => {
+    frame = 0;
+    if (pinned !== null) return mark(pinned);
+    let current = 0;
+    headings.forEach((heading, i) => {
+      if (heading && heading.getBoundingClientRect().top <= 120) current = i;
+    });
+    const atBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 2;
+    mark(atBottom ? headings.length - 1 : current);
+  };
+
+  links.forEach((link, i) =>
+    link.addEventListener('click', () => {
+      pinned = i;
+      mark(i);
+    })
+  );
+  for (const type of ['wheel', 'touchstart', 'keydown']) {
+    addEventListener(type, () => (pinned = null), { passive: true });
+  }
+  addEventListener(
+    'scroll',
+    () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    },
+    { passive: true }
+  );
+  addEventListener('resize', update);
+  update();
+</script>
+
+<style>
+  .hero {
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(2rem, 5vw, 3.5rem);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-bottom: 2rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+    text-decoration: none;
+  }
+
+  .back:hover {
+    color: var(--text);
+  }
+
+  .back :global(.back-icon) {
+    width: 1rem;
+    height: 1rem;
+    transform: rotate(180deg);
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 5vw + 1rem, 4rem);
+    letter-spacing: -0.04em;
+  }
+
+  .summary {
+    max-width: 40rem;
+    margin-top: 1rem;
+    color: var(--muted);
+    font-size: clamp(1.125rem, 0.5vw + 1rem, 1.25rem);
+  }
+
+  .repo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.75rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    text-decoration: underline;
+    text-decoration-color: var(--border-strong);
+    text-underline-offset: 0.3em;
+  }
+
+  .repo:hover {
+    color: var(--text);
+    text-decoration-color: var(--accent);
+  }
+
+  .repo :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: clamp(2rem, 6vw, 5rem);
+    padding-block: clamp(2.5rem, 6vw, 4rem) clamp(3.5rem, 8vw, 6rem);
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 6rem;
+    align-self: start;
+    display: grid;
+    gap: 2rem;
+  }
+
+  .sidebar-title {
+    margin-bottom: 0.75rem;
+    color: var(--faint);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .sidebar ol {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.875rem;
+  }
+
+  .sidebar ol a {
+    color: var(--muted);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.3em;
+    transition:
+      color 150ms ease,
+      text-decoration-color 150ms ease;
+  }
+
+  .sidebar ol a:hover {
+    color: var(--text);
+  }
+
+  .sidebar ol a[aria-current] {
+    color: var(--text);
+    font-weight: 500;
+    text-decoration-color: var(--accent);
+  }
+
+  .stack .tag-list li {
+    font-size: 0.75rem;
+  }
+
+  .prose {
+    max-width: var(--prose);
+  }
+
+  .prose :global(h2) {
+    margin: 3.5rem 0 1rem;
+    font-size: 1.625rem;
+    letter-spacing: -0.025em;
+  }
+
+  .prose :global(h2:first-child) {
+    margin-top: 0;
+  }
+
+  /* Direct children only, so figures like the diagram keep their own styles. */
+  .prose > :global(p),
+  .prose > :global(ul),
+  .prose > :global(ol),
+  .prose > :global(pre),
+  .prose > :global(figure) {
+    margin-block: 0 1.25rem;
+  }
+
+  .prose > :global(ul),
+  .prose > :global(ol) {
+    padding-left: 1.25rem;
+  }
+
+  .prose > :global(ul) > :global(li),
+  .prose > :global(ol) > :global(li) {
+    margin-bottom: 0.5rem;
+    padding-left: 0.25rem;
+  }
+
+  .prose > :global(ul) > :global(li::marker),
+  .prose > :global(ol) > :global(li::marker) {
+    color: var(--faint);
+  }
+
+  .prose :global(strong) {
+    font-weight: 600;
+  }
+
+  .prose :global(a:not(.button)) {
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-underline-offset: 0.2em;
+  }
+
+  .prose :global(:not(pre) > code) {
+    padding: 0.125rem 0.375rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-2);
+    font-size: 0.85em;
+  }
+
+  .prose :global(pre) {
+    overflow-x: auto;
+    padding: 1rem 1.125rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  .prose :global(.astro-code),
+  .prose :global(.astro-code span) {
+    color: var(--shiki-light);
+    background-color: var(--surface-2);
+  }
+
+  :global(:root[data-theme='dark']) .prose :global(.astro-code),
+  :global(:root[data-theme='dark']) .prose :global(.astro-code span) {
+    color: var(--shiki-dark);
+  }
+
+  .prose :global(.astro-code span) {
+    background-color: transparent;
+  }
+
+  .prose > :global(figure.arch) {
+    margin-block: 1.5rem 2rem;
+  }
+
+  .source-cta {
+    margin-top: 3rem;
+  }
+
+  @media (max-width: 56rem) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+      position: static;
+    }
+
+    .sidebar nav {
+      display: none;
+    }
+  }
+</style>

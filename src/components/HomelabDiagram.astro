@@ -1,0 +1,195 @@
+---
+// Small static Homelab diagram for the homepage card. The project page uses
+// the interactive HomelabExplorer instead.
+const platform = ['Envoy Gateway', 'Argo CD', 'Monitoring and logs', 'Open WebUI'];
+---
+
+<figure class="arch">
+  <div class="box host">
+    <p class="box-label">Ubuntu host <span>· set up with Ansible</span></p>
+
+    <div class="box docker">
+      <p class="box-label">Docker</p>
+
+      <div class="box cluster">
+        <p class="box-label">Kind cluster <span>· 3 nodes, each a Docker container</span></p>
+
+        <div class="group">
+          <p class="group-head">
+            <span class="group-name">Platform</span>
+            <span class="group-source">Flux · Homelab repo</span>
+          </p>
+          <ul class="chips">
+            {platform.map((item) => <li>{item}</li>)}
+            <li class="gpu">Local LLM on the GPU</li>
+          </ul>
+        </div>
+
+        <div class="group">
+          <p class="group-head">
+            <span class="group-name">Applications</span>
+            <span class="group-source">Argo CD · their own repos</span>
+          </p>
+          <ul class="apps">
+            <li>
+              <strong>Flip Finder</strong>
+              <span>flipfinder.localhost</span>
+            </li>
+            <li>
+              <strong>hello-crud</strong>
+              <span>hello-crud.localhost</span>
+            </li>
+            <li class="any">
+              <strong>Any app with a Helm chart</strong>
+              <span>its own namespace and hostname</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</figure>
+
+<style>
+  .arch {
+    margin: 0;
+    font-size: 0.9375rem;
+  }
+
+  p,
+  ul {
+    margin: 0;
+  }
+
+  ul {
+    padding: 0;
+    list-style: none;
+  }
+
+  .box {
+    display: grid;
+    gap: 0.625rem;
+    padding: 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .host {
+    background: var(--surface);
+    border-color: var(--border-strong);
+  }
+
+  .docker {
+    background: var(--surface-2);
+  }
+
+  .cluster {
+    gap: 0.875rem;
+    background: var(--surface);
+    border-style: dashed;
+    border-color: var(--border-strong);
+  }
+
+  .box-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+  }
+
+  .box-label span {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  .group {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .group-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .group-name {
+    color: var(--accent-text);
+    font-weight: 500;
+  }
+
+  .group-source {
+    color: var(--faint);
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .chips li {
+    padding: 0.3125rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-2);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .chips .gpu {
+    box-shadow: inset 3px 0 0 var(--accent);
+    padding-left: 0.8125rem;
+  }
+
+  .apps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: 0.5rem;
+  }
+
+  .apps li {
+    display: grid;
+    gap: 0.125rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    line-height: 1.35;
+  }
+
+  .apps strong {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .apps span {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .apps .any {
+    border-style: dashed;
+    border-color: var(--border-strong);
+    background: transparent;
+  }
+
+  .apps .any strong {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  @media (max-width: 34rem) {
+    .box {
+      padding: 0.5rem;
+    }
+  }
+</style>

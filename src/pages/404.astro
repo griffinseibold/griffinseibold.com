@@ -1,0 +1,38 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+---
+
+<Base title="Page not found">
+  <section class="container not-found">
+    <p class="eyebrow">404</p>
+    <h1>This page doesn't exist.</h1>
+    <p>It may have moved when the site was rebuilt.</p>
+    <a class="button button--primary" href="/">
+      Back to the homepage
+      <Icon name="arrow-right" />
+    </a>
+  </section>
+</Base>
+
+<style>
+  .not-found {
+    display: grid;
+    justify-items: start;
+    gap: 1rem;
+    padding-block: clamp(5rem, 15vw, 10rem);
+  }
+
+  h1 {
+    font-size: clamp(2rem, 4vw + 1rem, 3rem);
+    letter-spacing: -0.035em;
+  }
+
+  p:not(.eyebrow) {
+    color: var(--muted);
+  }
+
+  .button {
+    margin-top: 1rem;
+  }
+</style>
